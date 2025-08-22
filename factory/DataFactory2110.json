@@ -1,0 +1,9 @@
+{
+	"name": "DataFactory2110",
+	"location": "centralus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "edaf23ae-b880-41dd-8261-b4d62715b61e",
+		"tenantId": "1ea751bb-13ce-4a43-bb7c-a20a29c47a92"
+	}
+}

@@ -1,0 +1,190 @@
+{
+	"name": "dataflow2",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "user_profile",
+						"type": "DatasetReference"
+					},
+					"name": "userProfile"
+				},
+				{
+					"dataset": {
+						"referenceName": "user_perferances",
+						"type": "DatasetReference"
+					},
+					"name": "UserPreferances"
+				},
+				{
+					"dataset": {
+						"referenceName": "Interactions",
+						"type": "DatasetReference"
+					},
+					"name": "Interaction"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText7",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "join1"
+				},
+				{
+					"name": "Category"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "select2"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "parse1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "select3"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          UserID as string,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Age as integer,",
+				"          Gender as string,",
+				"          Location as string,",
+				"          JoinDate as date,",
+				"          PreferredCategories as string,",
+				"          SpendingTier as string,",
+				"          LastLogin as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> userProfile",
+				"source(output(",
+				"          UserID as string,",
+				"          Electronics_Score as integer,",
+				"          Fashion_Score as integer,",
+				"          Beauty_Score as integer,",
+				"          Home_Score as integer,",
+				"          Sports_Score as integer,",
+				"          Books_Score as integer,",
+				"          Gaming_Score as integer,",
+				"          Health_Score as integer,",
+				"          Travel_Score as integer,",
+				"          Music_Score as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> UserPreferances",
+				"source(output(",
+				"          InteractionID as string,",
+				"          UserID as string,",
+				"          ProductID as string,",
+				"          InteractionType as string,",
+				"          Timestamp as timestamp,",
+				"          SessionID as string,",
+				"          Duration as timestamp,",
+				"          DeviceType as string,",
+				"          Rating as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Interaction",
+				"userProfile, UserPreferances join(userProfile@UserID == UserPreferances@UserID,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> join1",
+				"select1 unpivot(output(",
+				"          Category as string,",
+				"          AffinityScore as integer",
+				"     ),",
+				"     ungroupBy(UserID,",
+				"          FirstName,",
+				"          LastName),",
+				"     lateral: false,",
+				"     ignoreNullPivots: true) ~> Category",
+				"join1 select(mapColumn(",
+				"          UserID = userProfile@UserID,",
+				"          FirstName,",
+				"          LastName,",
+				"          Electronics_Score,",
+				"          Fashion_Score,",
+				"          Beauty_Score,",
+				"          Home_Score,",
+				"          Sports_Score,",
+				"          Books_Score,",
+				"          Gaming_Score,",
+				"          Health_Score,",
+				"          Travel_Score,",
+				"          Music_Score",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"derivedColumn2, userProfile lookup(Category@UserID == userProfile@UserID,",
+				"     multiple: false,",
+				"     pickup: 'first',",
+				"     asc(userProfile@UserID, true),",
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1 select(mapColumn(",
+				"          UserID = Category@UserID,",
+				"          FirstName = Category@FirstName,",
+				"          LastName = Category@LastName,",
+				"          Category,",
+				"          AffinityScore,",
+				"          PreferredCategories",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select2",
+				"parse1 derive({Preference Match} = case (equals(PreferredCategories.PreferredValue1,Category)|| equals(PreferredCategories.PreferredValue2,Category) || equals(PreferredCategories.PreferredValue3,Category),",
+				"\"High\", \"Low\"),",
+				"          {Full Name} = FirstName + ' ' + LastName) ~> derivedColumn1",
+				"select2 parse(PreferredCategories = PreferredCategories ? (PreferredValue1 as string,",
+				"          PreferredValue2 as string,",
+				"          PreferredValue3 as string),",
+				"     format: 'delimited',",
+				"     columnNamesAsHeader: false,",
+				"     columnDelimiter: '|',",
+				"     nullValue: '') ~> parse1",
+				"Category derive(Category = replace(replace(Category, '_Score', ''), '_', ' '),",
+				"          {Full name} = FirstName + ' ' + LastName) ~> derivedColumn2",
+				"derivedColumn1 select(mapColumn(",
+				"          UserID,",
+				"          Category,",
+				"          AffinityScore,",
+				"          {Preference Match},",
+				"          {Full Name}",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select3",
+				"select3 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1"
+			]
+		}
+	}
+}

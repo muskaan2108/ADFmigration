@@ -1,0 +1,61 @@
+{
+	"name": "Interactions",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "DataLake",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "interactions.csv",
+				"fileSystem": "source"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "InteractionID",
+				"type": "String"
+			},
+			{
+				"name": "UserID",
+				"type": "String"
+			},
+			{
+				"name": "ProductID",
+				"type": "String"
+			},
+			{
+				"name": "InteractionType",
+				"type": "String"
+			},
+			{
+				"name": "Timestamp",
+				"type": "String"
+			},
+			{
+				"name": "SessionID",
+				"type": "String"
+			},
+			{
+				"name": "Duration",
+				"type": "String"
+			},
+			{
+				"name": "DeviceType",
+				"type": "String"
+			},
+			{
+				"name": "Rating",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

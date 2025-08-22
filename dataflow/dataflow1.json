@@ -1,0 +1,114 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "orders",
+						"type": "DatasetReference"
+					},
+					"name": "orders"
+				},
+				{
+					"dataset": {
+						"referenceName": "customer",
+						"type": "DatasetReference"
+					},
+					"name": "customer"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText6",
+						"type": "DatasetReference"
+					},
+					"name": "sink"
+				}
+			],
+			"transformations": [
+				{
+					"name": "customerorderjoin"
+				},
+				{
+					"name": "Filtercancelled"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "derivedColumn2"
+				},
+				{
+					"name": "Rank"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          OrderID as integer,",
+				"          CustomerID as string,",
+				"          OrderDate as date,",
+				"          Status as string,",
+				"          TotalAmount as decimal(10,0)",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     partitionBy('hash', 2,",
+				"          CustomerID",
+				"     )) ~> orders",
+				"source(output(",
+				"          CustomerID as string,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Region as string,",
+				"          JoinDate as date,",
+				"          Email as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     partitionBy('hash', 2,",
+				"          CustomerID",
+				"     )) ~> customer",
+				"orders, customer join(orders@CustomerID == customer@CustomerID,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     partitionBy('hash', 2,",
+				"          orders@CustomerID",
+				"     ),",
+				"     broadcast: 'auto')~> customerorderjoin",
+				"customerorderjoin filter(Status!='Cancelled') ~> Filtercancelled",
+				"Filtercancelled derive({Full Name} = concatWS(' ',FirstName,LastName),",
+				"          {order month} = substring(toString(OrderDate),1,7)) ~> derivedColumn1",
+				"derivedColumn1 aggregate(groupBy(orders@CustomerID,",
+				"          {Full Name},",
+				"          Region),",
+				"     {Total Orders} = count(OrderID),",
+				"          {Completed Orders} = count(Status=='Completed'),",
+				"          {Total Revenue} = sum(TotalAmount),",
+				"          {Average Order value} = avg(TotalAmount)) ~> aggregate1",
+				"aggregate1 derive(Customersegment = case(",
+				"    {Total Revenue} >= 400, 'HIGH',",
+				"    {Total Revenue} >= 200 && {Total Revenue} <= 399, 'MEDIUM',",
+				"    'LOW'",
+				")) ~> derivedColumn2",
+				"derivedColumn2 window(desc({Total Revenue}, true),",
+				"     {Revenue Rank} = rank()) ~> Rank",
+				"Rank sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink"
+			]
+		}
+	}
+}

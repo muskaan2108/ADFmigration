@@ -1,0 +1,45 @@
+{
+	"name": "orders",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "DataLake",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "orders_dataset.csv",
+				"fileSystem": "source"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "OrderID",
+				"type": "String"
+			},
+			{
+				"name": "CustomerID",
+				"type": "String"
+			},
+			{
+				"name": "OrderDate",
+				"type": "String"
+			},
+			{
+				"name": "Status",
+				"type": "String"
+			},
+			{
+				"name": "TotalAmount",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
