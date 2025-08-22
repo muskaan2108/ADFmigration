@@ -1,0 +1,9 @@
+{
+	"name": "ProdDf2108",
+	"location": "centralus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "15312bc4-f1a6-4d6c-bc9f-e1c99ef21763",
+		"tenantId": "1ea751bb-13ce-4a43-bb7c-a20a29c47a92"
+	}
+}
